@@ -19,14 +19,10 @@ if ! command -v git &> /dev/null; then
   fi
 fi
 
-# --- Clone or update Hyperion repo ---
+# --- Clone Hyperion repo ---
 if [ ! -d "$HYPERION_DIR" ]; then
   echo "[*] Cloning Hyperion into $HYPERION_DIR ..."
   git clone "$REPO_URL" "$HYPERION_DIR"
-else
-  echo "[*] Updating existing Hyperion repo..."
-  cd "$HYPERION_DIR"
-  git pull origin main
 fi
 
 cd "$MY_PROJECT_DIR"
@@ -51,7 +47,7 @@ source "$MY_PROJECT_DIR/.venv/bin/activate"
 echo "[*] Installing dependencies..."
 pip install --upgrade pip
 
-# Your project requirements
+# e-voting-pq-main project requirements
 if [ -f "$MY_PROJECT_DIR/requirements.txt" ]; then
   echo "  - Installing project requirements..."
   pip install -r "$MY_PROJECT_DIR/requirements.txt"
@@ -63,6 +59,15 @@ if [ -f "$HYPERION_DIR/requirements.txt" ]; then
   pip install -r "$HYPERION_DIR/requirements.txt"
 fi
 
+# Hyperion dependencies
+echo "  - Installing Hyperion dependencies..."
+if [ ! -d "$HYPERION_DIR/threshold-crypto" ]; then
+  echo "  - Cloning threshold-crypto..."
+  git clone --branch v0.2.0 --depth 1 https://github.com/tompetersen/threshold-crypto.git "$HYPERION_DIR/threshold-crypto"
+  cd "$HYPERION_DIR/threshold-crypto"
+  pip install .
+  cd "$MY_PROJECT_DIR"
+fi
 # --- Add Hyperion repo to PYTHONPATH ---
 export PYTHONPATH="$HYPERION_DIR:$PYTHONPATH"
 

@@ -5,7 +5,11 @@ from PyQt5.QtWidgets import (
     QPushButton, QTextEdit, QLineEdit, QLabel, QComboBox, QTabWidget,
     QTableWidget, QTableWidgetItem, QHeaderView
 )
+<<<<<<< HEAD
 import voter 
+=======
+from . import voter 
+>>>>>>> hyperion-gui
 import httpx
 
 SERVER = "http://127.0.0.1:8000"
