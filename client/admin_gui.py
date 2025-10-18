@@ -46,6 +46,11 @@ class AdminApp(QWidget):
         self.tab_logs.setLayout(self.build_logs_tab())
         self.tabs.addTab(self.tab_logs, "Logs")
 
+        # Tab 4: PQC Mapping
+        self.tab_pqc_map = QWidget()
+        self.tab_pqc_map.setLayout(self.build_pqc_tab())
+        self.tabs.addTab(self.tab_pqc_map, "PQC Mapping")
+
         layout.addWidget(self.tabs)
         self.setLayout(layout)
     
@@ -59,6 +64,12 @@ class AdminApp(QWidget):
 
         btn_tally = QPushButton("Run Tally")
         btn_tally.clicked.connect(self.do_tally)
+
+        btn_tally.setToolTip(
+            "Runs full Hyperion protocol.\n\n"
+            "Classical: EC-ElGamal encryption, ECDSA signatures.\n\n"
+            "PQC alternative: ML-KEM (encryption) + ML-DSA (signatures)."
+        )
 
         self.table_tally = QTableWidget()
         self.table_tally.setColumnCount(2)
@@ -77,6 +88,12 @@ class AdminApp(QWidget):
 
         btn_refresh = QPushButton("Refresh BB")
         btn_refresh.clicked.connect(self.do_show_bb)
+
+        btn_refresh.setToolTip(
+            "Displays the final bulletin board.\n\n"
+            "Classical: EC-ElGamal commitments.\n"
+            "PQC alternative: ML-KEM or lattice-based commitments."
+        )
 
         self.table_bb = QTableWidget()
         self.table_bb.setColumnCount(2)
@@ -100,6 +117,41 @@ class AdminApp(QWidget):
         self.logs_box.setPlaceholderText("Run the tally to view protocol logs...")
         layout.addWidget(self.logs_box)
 
+        return layout
+    
+    def build_pqc_tab(self):
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Mapping of Classical → Post-Quantum Components"))
+
+        table = QTableWidget()
+        table.setColumnCount(3)
+        table.setHorizontalHeaderLabels(["Component / Function", "Non-PQC", "PQC Alternative"])
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.verticalHeader().setVisible(False)
+
+        pqc_data = [
+            ("Key Generation (poc_setup)", "ECDSA", "ML-DSA"),
+            ("Threshold Setup (setup)", "EC-ElGamal + Shamir", "Threshold ML-KEM (experimental)"),
+            ("Vote Encryption (voting)", "EC-ElGamal", "ML-KEM"),
+            ("Vote Signature (voting)", "ECDSA", "ML-DSA"),
+            ("Zero-Knowledge Proofs (voting)", "NIZK + Chaum-Pedersen + Fiat-Shamir", "Lattice-based FS with aborts / Picnic / zk-STARKs"),
+            ("Tallying (encryption/decryption)", "EC-ElGamal threshold decryption", "Threshold ML-KEM (research)"),
+            ("Re-encryption Mixnet (tallying)", "ElGamal-compatible mixnet", "Lattice-based shuffle (Ring-LWE)"),
+            ("Partial Decryption Proofs (tallying)", "Sigma protocols (EC-based)", "Fiat-Shamir with aborts (lattice-based)"),
+            ("Commitments / Hash Functions", "SHA-256", "SHA-3 / SHAKE-256"),
+            ("Notification (voter term computation)", "EC-ElGamal", "ML-KEM"),
+            ("Verification (ballot checking)", "EC-ElGamal commitments", "Fiat-Shamir with aborts"),
+            ("Individual Views", "EC-ElGamal re-encryption", "Fiat-Shamir with aborts"),
+            ("Coercion Mitigation", "EC-ElGamal commitments", "Fiat-Shamir with aborts"),
+        ]
+
+        table.setRowCount(len(pqc_data))
+        for i, (comp, classical, pqc) in enumerate(pqc_data):
+            table.setItem(i, 0, QTableWidgetItem(comp))
+            table.setItem(i, 1, QTableWidgetItem(classical))
+            table.setItem(i, 2, QTableWidgetItem(pqc))
+
+        layout.addWidget(table)
         return layout
 
     # =========================
