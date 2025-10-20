@@ -88,6 +88,9 @@ A PyQt5 window will open with four tabs:
   - Vote data (encrypted EC-ElGamal points)
   - Commitments for each ballot
 
+## Run tests
+pytest tests/ -v
+
 ## Project Structure
 
 ```
