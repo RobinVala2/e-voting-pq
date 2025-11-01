@@ -108,6 +108,71 @@ e-voting-pq-main/
 └── README.md               # This file
 ```
 
+## System Architecture & UML Diagrams
+
+### Component Architecture
+
+The system is organized in four main layers: Client Layer (Admin & Voter GUIs), Network Layer (HTTP/REST API), Server Layer (FastAPI, Storage, Hyperion Runner), and Cryptographic Layer (Hyperion Protocol with Threshold Cryptography).
+
+![Component Architecture](output/component.png)
+
+*The component diagram shows how different parts of the system interact. Clients communicate with the FastAPI server via HTTP, which coordinates with the storage layer and Hyperion protocol runner for cryptographic operations.*
+
+---
+
+### Class Diagram - Server Components
+
+The server architecture consists of the main FastAPI application with endpoints for registration, voting, and tallying. It uses Pydantic models for request validation and integrates with the storage layer and Hyperion protocol runner.
+
+![Server Class Diagram](output/server.png)
+
+*Key server components:*
+- **FastAPI_App**: Main application with REST endpoints
+- **RegisterReq / CastReq**: Pydantic models for request validation
+- **Storage**: In-memory bulletin board and secrets management
+- **HyperionRunner**: Subprocess executor for the Hyperion protocol
+
+---
+
+### Class Diagram - Client Components
+
+The client layer provides two PyQt5 GUI applications: AdminApp for election administrators to trigger tallying and view results, and VoterApp for voters to register, cast votes, and verify their ballots on the bulletin board.
+
+![Client Class Diagram](output/client.png)
+
+*Key client components:*
+- **AdminApp**: PyQt5 GUI with tabs for tally results, bulletin board, logs, and PQC mapping
+- **VoterApp**: PyQt5 GUI for voter registration, voting, and verification
+- **VoterClient / AdminClient**: HTTP API client wrappers using httpx
+
+---
+
+### Sequence Diagram - Complete Voting Flow
+
+This diagram illustrates the entire voting process from voter registration through vote casting, tallying (triggered by admin), and final verification on the bulletin board.
+
+![Voting Flow Sequence](output/sequence.png)
+
+*The voting flow consists of four phases:*
+1. **Registration**: Voter generates trapdoor (x, h) and registers h with the server
+2. **Voting**: Voter encrypts their vote and submits it to the bulletin board
+3. **Tallying**: Admin triggers the Hyperion protocol (mixnet + threshold decryption)
+4. **Verification**: Voter retrieves notification (g_r) and verifies their vote on the bulletin board
+
+---
+
+### Deployment Diagram
+
+The deployment architecture shows the physical distribution of components: multiple voter machines and one admin machine communicate with a central server running the FastAPI application, in-memory storage, and Hyperion protocol.
+
+![Deployment Architecture](output/deployment.png)
+
+*Deployment overview:*
+- **Admin Machine**: Runs admin GUI to control election and view results
+- **Voter Machines**: Multiple instances running voter GUIs
+- **Server (127.0.0.1:8000)**: FastAPI server with in-memory storage and Hyperion protocol
+- All communication happens over HTTPS for security
+
 ## References
 
 - [Hyperion Voting Protocol](https://github.com/hyperion-voting/hyperion) - Original protocol implementation
