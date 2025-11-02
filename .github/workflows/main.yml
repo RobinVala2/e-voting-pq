@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: fedora:latest
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install system dependencies
+      run: |
+        dnf install -y python3 python3-pip git
+        
+    - name: Run setup script
+      run: |
+        chmod +x setup.sh
+        ./setup.sh
+        
+    - name: Install pytest
+      run: |
+        source .venv/bin/activate
+        pip install pytest
+        
+    - name: Run tests
+      env:
+        PYTHONPATH: ${{ github.workspace }}/hyperion
+      run: |
+        source .venv/bin/activate
+        pytest tests/ -v
+
