@@ -1,12 +1,11 @@
 import subprocess
 import re
 
-def run_hyperion(voters=50, tellers=3, max_votes=2):
+def run_hyperion(voters=50, tellers=3, threshold=2, max_votes=2):
     """
     Run Hyperion main.py as subprocess and capture its console output.
-    Returns: dict { 'raw_output': str, 'timings': dict, 'bulletin_board': list }
     """
-    cmd = ["python3", "hyperion/main.py", str(voters), str(tellers), str(max_votes)]
+    cmd = ["python3", "hyperion/main.py", str(voters), str(tellers), str(threshold), "-maxv", str(max_votes)]
     proc = subprocess.run(cmd, capture_output=True, text=True)
 
     output = proc.stdout
@@ -22,20 +21,80 @@ def parse_timings(text):
     """
     Extract timing table from Texttable output.
     """
-    match = re.search(r"Setup\s*\|.*?\n([^\n]+)", text)
-    if not match:
-        return {}
-    row = [x.strip() for x in re.split(r"\s*\|\s*", match.group(1))]
-    try:
-        values = [float(x) for x in row if re.match(r"^[0-9.]+$", x)]
-    except ValueError:
-        values = row
-    headings = re.findall(r"\|\s*([^|]+)", text.splitlines()[-3])  # last table heading line
-    return dict(zip(headings, values))
+    timings = {}
+    
+    lines = text.split('\n')
+    
+    header_start = None
+    for i, line in enumerate(lines):
+        if '| Setup' in line and '| Voting' in line:
+            header_start = i
+            break
+    
+    if header_start is None:
+        return timings
+    
+    header_end = None
+    for i in range(header_start + 1, min(header_start + 10, len(lines))):
+        if lines[i].startswith('+---'):
+            header_end = i
+            break
+    
+    if header_end is None:
+        return timings
+    
+    data_line = None
+    for i in range(header_end + 1, min(header_end + 5, len(lines))):
+        if '|' in lines[i] and re.search(r'\|\s*[0-9]+\.[0-9]+', lines[i]):
+            data_line = lines[i]
+            break
+    
+    if data_line is None:
+        return timings
+    
+    header_lines = lines[header_start:header_end]
+    
+    header_columns = []
+    for line in header_lines:
+        parts = [p.strip() for p in line.split('|')]
+        if parts and not parts[0]:
+            parts = parts[1:]
+        if not header_columns:
+            header_columns = ['' for _ in parts]
+        for i, part in enumerate(parts):
+            if i < len(header_columns):
+                if part:
+                    header_columns[i] = (header_columns[i] + ' ' + part).strip()
+    
+    data_parts = [d.strip() for d in data_line.split('|')]
+    if data_parts and not data_parts[0]:
+        data_parts = data_parts[1:]
+    
+    expected_headers = [
+        'Setup',
+        'Voting (avg.)',
+        'Tallying (Mixing)',
+        'Tallying (Decryption)',
+        'Notification',
+        'Verification (avg.)',
+        'Coercion Mitigation',
+        'Individual Views',
+    ]
+    
+    for i in range(min(len(data_parts), len(expected_headers))):
+        if i < len(data_parts):
+            value_str = data_parts[i]
+            expected_header = expected_headers[i]
+            try:
+                timings[expected_header] = float(value_str)
+            except (ValueError, TypeError):
+                pass
+    
+    return timings
 
 def parse_bulletin_board(text):
     """
-    Parse the multi-line ASCII Texttable printed by Hyperion main.py.
+    Parse the ASCII Texttable printed by Hyperion main.py.
     """
     bb_data = []
     lines = text.split('\n')

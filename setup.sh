@@ -8,7 +8,7 @@ HYPERION_DIR="$MY_PROJECT_DIR/hyperion"
 
 # --- Ensure git is installed ---
 if ! command -v git &> /dev/null; then
-  echo "[*] Git not found, installing..."
+  echo "[INFO] Git not found, installing..."
   if [ -f /etc/debian_version ]; then
     sudo apt update && sudo apt install -y git
   elif [ -f /etc/redhat-release ]; then
@@ -21,7 +21,7 @@ fi
 
 # --- Clone Hyperion repo ---
 if [ ! -d "$HYPERION_DIR" ]; then
-  echo "[*] Cloning Hyperion into $HYPERION_DIR ..."
+  echo "[INFO] Cloning Hyperion into $HYPERION_DIR ..."
   git clone "$REPO_URL" "$HYPERION_DIR"
 fi
 
@@ -29,7 +29,7 @@ cd "$MY_PROJECT_DIR"
 
 # --- Create virtual environment ---
 if [ ! -d "$MY_PROJECT_DIR/.venv" ]; then
-  echo "[*] Creating virtualenv in $MY_PROJECT_DIR/.venv..."
+  echo "[INFO] Creating virtualenv in $MY_PROJECT_DIR/.venv..."
 
   if command -v python3 &> /dev/null; then
     PYTHON_BIN=$(command -v python3)
@@ -37,14 +37,14 @@ if [ ! -d "$MY_PROJECT_DIR/.venv" ]; then
     PYTHON_BIN=$(ls /usr/bin/python3.* | sort -V | tail -n 1)
   fi
 
-  echo "[*] Using $PYTHON_BIN"
+  echo "[INFO] Using $PYTHON_BIN"
   "$PYTHON_BIN" -m venv "$MY_PROJECT_DIR/.venv"
 fi
 
 source "$MY_PROJECT_DIR/.venv/bin/activate"
 
 # --- Install dependencies ---
-echo "[*] Installing dependencies..."
+echo "[INFO] Installing dependencies..."
 pip install --upgrade pip
 
 # e-voting-pq-main project requirements
@@ -53,13 +53,7 @@ if [ -f "$MY_PROJECT_DIR/requirements.txt" ]; then
   pip install -r "$MY_PROJECT_DIR/requirements.txt"
 fi
 
-# Hyperion requirements
-if [ -f "$HYPERION_DIR/requirements.txt" ]; then
-  echo "  - Installing Hyperion requirements..."
-  pip install -r "$HYPERION_DIR/requirements.txt"
-fi
-
-# Hyperion dependencies
+# --- Hyperion dependencies ---
 echo "  - Installing Hyperion dependencies..."
 if [ ! -d "$HYPERION_DIR/threshold-crypto" ]; then
   echo "  - Cloning threshold-crypto..."
@@ -71,6 +65,9 @@ fi
 # --- Add Hyperion repo to PYTHONPATH ---
 export PYTHONPATH="$HYPERION_DIR:$PYTHONPATH"
 
+# Replace parties.py in hyperion with the one in the hyperion_files directory
+cp "$MY_PROJECT_DIR/hyperion_files/parties.py" "$HYPERION_DIR/parties.py"
+
 echo
-echo "[*] Setup complete."
+echo "[INFO] Setup complete."
 echo "Activate env with: source $MY_PROJECT_DIR/.venv/bin/activate"
