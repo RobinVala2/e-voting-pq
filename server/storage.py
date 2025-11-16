@@ -25,7 +25,7 @@ def run_tally():
     tally = []
     for row in BB:
         plaintext = row["enc_vote"]
-        g_r = f"g_r_{row["row_id"]}"
+        g_r = f"g_r_{row['row_id']}"
         secrets_store[row["voter_id"]]["g_r"] = g_r
         tally.append({"row_id": row["row_id"], "vote": plaintext, "h_r": g_r})
     return tally
